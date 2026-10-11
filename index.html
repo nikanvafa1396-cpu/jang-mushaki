@@ -1,0 +1,152 @@
+Enter file contents here
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🚀 جنگ موشکی</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;min-height:100vh;background:
+ radial-gradient(circle at 50% 20%,#36104e 0,#100817 40%,#020204 100%);
+ color:#fff;font-family:Tahoma,Arial,sans-serif;text-align:center;
+}
+header{
+ position:sticky;top:0;display:flex;justify-content:space-around;
+ align-items:center;padding:12px 5px;background:#08060eeF;
+ border-bottom:1px solid #a000ff;z-index:2;
+}
+button{
+ border:1px solid #ff3158;background:#210d27;color:white;
+ padding:12px 16px;border-radius:12px;font-size:15px;cursor:pointer;
+}
+button:active{transform:scale(.96)}
+h1{color:#ff3158;text-shadow:0 0 16px #f06;margin:22px 0 8px}
+.panel{
+ margin:15px auto;padding:16px;width:92%;max-width:450px;
+ border:1px solid #7e168e;border-radius:17px;
+ background:#100b18dd;box-shadow:0 0 18px #8b00ff25;
+}
+.stats{display:flex;justify-content:space-around;gap:8px;flex-wrap:wrap}
+.stat{background:#211329;border-radius:10px;padding:10px}
+#arena{
+ height:300px;position:relative;overflow:hidden;
+ border:1px solid #56206d;border-radius:15px;
+ background:radial-gradient(circle,#180c25,#030307);
+ touch-action:manipulation;
+}
+#target{
+ position:absolute;display:none;width:58px;height:58px;
+ border:2px solid #ff3158;border-radius:50%;font-size:30px;
+ background:#4b0924;box-shadow:0 0 22px #ff174f;
+}
+#message{color:#e6b6ff;line-height:1.9}
+input{
+ width:90%;padding:13px;margin:8px 0;background:#09070d;
+ color:white;border:1px solid #9238b4;border-radius:10px;font-size:16px;
+}
+#leaderboard{text-align:right;line-height:2}
+small{color:#b8a6c4}
+</style>
+</head>
+<body>
+<header>
+ <b>🚀 جنگ موشکی</b>
+ <span>نسخه 0001</span>
+ <button id="settings">⚙️ تنظیمات</button>
+</header>
+
+<h1>☠️ جنگ موشکی ☠️</h1>
+<div class="panel">
+ <div class="stats">
+  <div class="stat">⏱️ زمان: <b id="time">30</b></div>
+  <div class="stat">🎯 امتیاز: <b id="score">0</b></div>
+  <div class="stat">🏆 رکورد: <b id="best">0</b></div>
+ </div>
+</div>
+
+<div class="panel">
+ <p id="message">برای شروع، اسمت رو وارد کن!</p>
+ <input id="playerName" maxlength="18" placeholder="اسم بازیکن">
+ <br>
+ <button id="start">🚀 شروع بازی</button>
+ <div style="height:14px"></div>
+ <div id="arena">
+  <button id="target" aria-label="هدف">☄️</button>
+ </div>
+ <p><small>برای گرفتن امتیاز، روی هدف بزن!</small></p>
+</div>
+
+<div class="panel">
+ <h2>🏆 لیدربورد دستگاه</h2>
+ <div id="leaderboard">هنوز رکوردی ثبت نشده.</div>
+ <small>این جدول فعلاً فقط روی همین دستگاه ذخیره می‌شود.</small>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+let score=0,time=30,running=false,timer=null;
+let name=localStorage.getItem("jm_name")||"";
+$("playerName").value=name;
+
+function getScores(){
+ try{return JSON.parse(localStorage.getItem("jm_scores")||"[]")}
+ catch(e){return []}
+}
+function render(){
+ const list=getScores().sort((a,b)=>b.score-a.score).slice(0,10);
+ $("leaderboard").innerHTML=list.length
+ ?list.map((x,i)=>`${i+1}. ${escapeText(x.name)} — ${x.score} امتیاز`).join("<br>")
+ :"هنوز رکوردی ثبت نشده.";
+ $("best").textContent=list.length?list[0].score:0;
+}
+function escapeText(s){
+ return String(s).replace(/[&<>"']/g,c=>({
+ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+ }[c]));
+}
+function placeTarget(){
+ const a=$("arena"),t=$("target");
+ const maxX=Math.max(0,a.clientWidth-t.offsetWidth);
+ const maxY=Math.max(0,a.clientHeight-t.offsetHeight);
+ t.style.left=Math.floor(Math.random()*maxX)+"px";
+ t.style.top=Math.floor(Math.random()*maxY)+"px";
+}
+function endGame(){
+ running=false;clearInterval(timer);timer=null;
+ $("target").style.display="none";
+ const list=getScores();
+ list.push({name:name,score:score});
+ list.sort((a,b)=>b.score-a.score);
+ localStorage.setItem("jm_scores",JSON.stringify(list.slice(0,50)));
+ $("message").textContent=`بازی تمام شد! امتیازت: ${score} 🎯`;
+ $("start").textContent="🔄 بازی دوباره";
+ render();
+}
+$("start").addEventListener("click",()=>{
+ if(running)return;
+ name=$("playerName").value.trim();
+ if(!name){$("message").textContent="اول اسمت رو وارد کن!";$("playerName").focus();return;}
+ localStorage.setItem("jm_name",name);
+ score=0;time=30;running=true;
+ $("score").textContent=score;$("time").textContent=time;
+ $("message").textContent="بزن روی هدف‌ها! 🔥";
+ $("target").style.display="block";$("start").textContent="🎯 بازی در حال اجرا";
+ placeTarget();
+ timer=setInterval(()=>{
+  time--;$("time").textContent=time;
+  if(time<=0)endGame();
+ },1000);
+});
+$("target").addEventListener("click",()=>{
+ if(!running)return;
+ score++;$("score").textContent=score;placeTarget();
+});
+$("settings").addEventListener("click",()=>{
+ alert("جنگ موشکی | نسخه 0001\nزمان هر بازی: 30 ثانیه\nرکوردها روی همین دستگاه ذخیره می‌شوند.");
+});
+render();
+</script>
+</body>
+  </html>
